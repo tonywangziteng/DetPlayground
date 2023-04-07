@@ -18,7 +18,7 @@ class BaseConv(nn.Module):
         kernel_size: int, 
         groups: int = 1,
         stride: int = 1, 
-        act: Callable[[bool], nn.Module] = nn.ReLU,
+        act: nn.Module = nn.ReLU,
     ) -> None:
         super().__init__()
         padding: int = (kernel_size - 1) // 2
@@ -47,7 +47,7 @@ class DWConv(nn.Module):
         out_channels: int, 
         ksize: int, 
         stride: int = 1, 
-        act: callable[[bool], nn.Module] = nn.SiLU
+        act: nn.Module = nn.SiLU
     ):
         super().__init__()
         self.dconv = BaseConv(
