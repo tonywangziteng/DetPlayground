@@ -18,7 +18,7 @@ class YOLOXHead(nn.Module):
         width: float = 1.0,
         strides: List[int] = [8, 16, 32],
         in_channels: List[int] = [256, 512, 1024],
-        act: Callable[[bool], nn.Module] = SiLU,
+        act: nn.Module = SiLU,
         depthwise=False,
     ):
         """

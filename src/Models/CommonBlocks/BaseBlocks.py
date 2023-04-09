@@ -294,13 +294,13 @@ class CSPLayer(nn.Module):
 
     def __init__(
         self,
-        in_channels,
-        out_channels,
-        n=1,
-        shortcut=True,
-        expansion=0.5,
-        depthwise=False,
-        act="silu",
+        in_channels: int,
+        out_channels: int, 
+        bottleneck_num: int=1,
+        skip_connection: bool = True,
+        expansion: float = 0.5,
+        depthwise: bool = False,
+        act: nn.Module = SiLU,
     ):
         """
         Args:
@@ -316,9 +316,14 @@ class CSPLayer(nn.Module):
         self.conv3 = BaseConv(2 * hidden_channels, out_channels, 1, stride=1, act=act)
         module_list = [
             Bottleneck(
-                hidden_channels, hidden_channels, shortcut, 1.0, depthwise, act=act
+                in_channels=hidden_channels, 
+                hidden_channels=hidden_channels, 
+                out_channels=hidden_channels, 
+                skip_connection=skip_connection, 
+                depthwise=depthwise, 
+                act=act
             )
-            for _ in range(n)
+            for _ in range(bottleneck_num)
         ]
         self.m = nn.Sequential(*module_list)
 

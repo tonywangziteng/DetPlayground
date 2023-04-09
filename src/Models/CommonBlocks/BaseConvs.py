@@ -16,8 +16,9 @@ class BaseConv(nn.Module):
         in_channels: int, 
         out_channels: int, 
         kernel_size: int, 
-        groups: int = 1,
         stride: int = 1, 
+        groups: int = 1,
+        bias: bool = False,
         act: nn.Module = nn.ReLU,
     ) -> None:
         super().__init__()
@@ -28,7 +29,8 @@ class BaseConv(nn.Module):
             kernel_size=kernel_size, 
             stride=stride, 
             padding=padding, 
-            groups=groups
+            groups=groups, 
+            bias=bias
         )
 
         self._norm = nn.BatchNorm2d(out_channels)
