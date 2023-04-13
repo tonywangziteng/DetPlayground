@@ -11,7 +11,8 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true, 
-            "cwd": "${workspaceFolder}/src"
+            "cwd": "${workspaceFolder}/src", 
+            "args": ["--config_name=YoloxNano.yaml"]
         }
     ]
 }

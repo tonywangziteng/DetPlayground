@@ -5,5 +5,6 @@ from Models.Backbones import Darknet
 from .Yolo.YoloX import YoloX
 
 model_collection: Dict[str, nn.Module] = {
-    "YoloX-L": YoloX.YoloX_L
+    "YoloX-L": YoloX.YoloX_L, 
+    "YoloX-Nano": YoloX.YoloX_Nano
 }

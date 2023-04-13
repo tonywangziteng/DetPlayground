@@ -1,5 +1,6 @@
 import os
 from typing import Any
+import logging
 
 import click
 import tqdm
@@ -13,8 +14,9 @@ from Models import model_collection
 from Dataset.CocoDataset import CocoDataset, coco_collate_fn
 
 @click.command()
-@click.option('--config_path',type = str,  default = "../Config/YoloxL.yaml", help='Number of greetings.')
-def main(config_path: str):
+@click.option('--config_name',type = str,  default = "YoloxL.yaml", help='Number of greetings.')
+def main(config_name: str):
+    config_path: str = os.path.join("../Config", config_name)
     with open(config_path) as f:
         args = yaml.load(f, Loader=yaml.SafeLoader)
         
@@ -39,5 +41,4 @@ def main(config_path: str):
         output = model(data)
 
 if __name__ == "__main__":
-    
     main()
