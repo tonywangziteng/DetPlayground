@@ -11,7 +11,7 @@ from torch.utils.data.dataloader import DataLoader
 
 import yaml
 from Models import model_collection
-from Dataset.CocoDataset import CocoDataset, coco_collate_fn
+from Dataset.CocoDataset import CocoDataset
 
 @click.command()
 @click.option('--config_name',type = str,  default = "YoloxL.yaml", help='Number of greetings.')
@@ -30,7 +30,6 @@ def main(config_name: str):
     dataloader = DataLoader(
         dataset=dataset, 
         batch_size=args["training"]["batchSize"], 
-        collate_fn=coco_collate_fn
     )
     
     model.train()

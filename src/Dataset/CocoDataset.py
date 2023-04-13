@@ -6,6 +6,7 @@ from pycocotools.coco import COCO
 
 from PIL import Image
 
+import numpy as np
 import torch
 from torchvision import transforms
 from torch.utils.data.dataset import Dataset
@@ -41,7 +42,7 @@ class CocoDataset(Dataset):
         else:
             self._transform = transforms.Compose([
                 transforms.ToTensor(), 
-                transforms.Resize(args["imgSize"], antialias=True)
+                transforms.Resize(args["imgSize"], antialias=True), 
             ])
         self._target_transform = target_transform
         
@@ -62,21 +63,29 @@ class CocoDataset(Dataset):
         if self._target_transform is not None:
             target = self._target_transform(target)
 
-        return img, target
+        # category(1) + bbox(4)
+        bboxes = torch.zeros([120, 5])
+        for idx, instance in enumerate(target):
+            bbox = instance.get("bbox")
+            category_id: int = instance.get("category_id")
+            bboxes[idx, 0] = category_id
+            bboxes[idx, 1:] = torch.tensor(bbox)
+
+        return img, bboxes
     
     
-def coco_collate_fn(batch):
-    images, annotations = zip(*batch)
-    max_ann_len = max(len(ann) for ann in annotations)
+# def coco_collate_fn(batch):
+#     images, annotations = zip(*batch)
+#     max_ann_len = max(len(ann) for ann in annotations)
 
-    padded_annotations = []
-    for ann in annotations:
-        pad_len = max_ann_len - len(ann)
-        padded_ann = ann + [None] * pad_len
-        padded_annotations.append(padded_ann)
+#     padded_annotations = []
+#     for ann in annotations:
+#         pad_len = max_ann_len - len(ann)
+#         padded_ann = ann + [None] * pad_len
+#         padded_annotations.append(padded_ann)
 
-    images = torch.stack(images, 0)
-    return images, padded_annotations
+#     images = torch.stack(images, 0)
+#     return images, padded_annotations
 
 if __name__ == "__main__":
     import yaml
@@ -94,7 +103,6 @@ if __name__ == "__main__":
     
     coco_dataloader = DataLoader(
         coco_dataset, 8, shuffle=True, 
-        collate_fn=collate_fn
     )
     
     for data, target in coco_dataloader:
