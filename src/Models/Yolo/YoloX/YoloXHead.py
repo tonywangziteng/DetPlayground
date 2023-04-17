@@ -31,7 +31,8 @@ class YoloXHead(nn.Module):
         self.num_classes = num_classes
         self.decode_in_inference = True  # for deploy, set to False
         
-        self.strides = strides
+        self._strides = strides
+        self._in_channels = in_channels
 
         self.cls_convs = nn.ModuleList()
         self.reg_convs = nn.ModuleList()
@@ -136,13 +137,9 @@ class YoloXHead(nn.Module):
 
     def forward(self, xin, labels=None, imgs=None):
         outputs = []
-        origin_preds = []
-        x_shifts = []
-        y_shifts = []
-        expanded_strides = []
 
-        for k, (cls_conv, reg_conv, stride_this_level, x) in enumerate(
-            zip(self.cls_convs, self.reg_convs, self.strides, xin)
+        for k, (cls_conv, reg_conv, x) in enumerate(
+            zip(self.cls_convs, self.reg_convs, xin)
         ):
             x = self.stems[k](x)
             cls_x = x
@@ -156,14 +153,22 @@ class YoloXHead(nn.Module):
             obj_output = self.obj_preds[k](reg_feat)
 
             output = torch.cat(
-                [reg_output, obj_output.sigmoid(), cls_output.sigmoid()], 1
+                [reg_output, obj_output, cls_output], 1
             )
 
             outputs.append(output)
 
-        # [batch, n_anchors_all, 85]
-        outputs = torch.cat(
-            [x.flatten(start_dim=2) for x in outputs], dim=2
-        ).permute(0, 2, 1)
+        # [[batch, 85, h*w] * n] -> [batch, n_anchors_all, 85]
+        # outputs = torch.cat(
+        #     [x.flatten(start_dim=2) for x in outputs], dim=2
+        # ).permute(0, 2, 1)
         
         return outputs
+
+    @property
+    def in_channels(self) -> List[int]:
+        return self._in_channels
+    
+    @property
+    def strides(self) -> List[int]:
+        return self._strides

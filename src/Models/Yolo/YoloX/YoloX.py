@@ -28,6 +28,10 @@ class YoloX(nn.Module, ABC):
         outputs = self.head(fpn_outs)
 
         return outputs
+    
+    @property
+    def strides(self):
+        return self.head.strides
 
 class YoloX_L(YoloX):
     def __init__(

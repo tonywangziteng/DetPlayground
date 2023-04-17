@@ -11,5 +11,5 @@ training:
       - 416
       - 416
 
-  GPUIdx: 0
+  GPUIdx: 1
   batchSize: 32
