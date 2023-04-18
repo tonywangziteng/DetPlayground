@@ -12,12 +12,15 @@ from torchvision import transforms
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.dataloader import DataLoader
 
+from Dataset.Transforms import YoloXCocoDataTransform
+from Dataset.Transforms import YoloXCocoTargetTransform
+
 
 class CocoDataset(Dataset):
     def __init__(
         self, 
         args: Dict[str, Any], 
-        transform: Optional[Callable] = None, 
+        data_transform: Optional[Callable] = None, 
         target_transform: Optional[Callable] = None
     ) -> None:
         """Coco structure dataset
@@ -37,14 +40,15 @@ class CocoDataset(Dataset):
         self._coco_dataset = COCO(self._anno_path)
         self._ids: List[str] = list(self._coco_dataset.imgs.keys())
         
-        if transform is not None:
-            self._transform = transform
+        if data_transform is not None:
+            self._data_transform = data_transform
         else:
-            self._transform = transforms.Compose([
-                transforms.ToTensor(), 
-                transforms.Resize(args["imgSize"], antialias=True), 
-            ])
-        self._target_transform = target_transform
+            self._data_transform = YoloXCocoDataTransform(args["imgSize"])
+                        
+        if target_transform is not None:
+            self._target_transform = target_transform
+        else:
+            self._target_transform = YoloXCocoTargetTransform(args["imgSize"])
         
     def __len__(self) -> int:
         return len(self._ids)
@@ -54,24 +58,18 @@ class CocoDataset(Dataset):
         ann_ids = self._coco_dataset.getAnnIds(imgIds=img_id)
         target = self._coco_dataset.loadAnns(ann_ids)
 
-        path = self._coco_dataset.loadImgs(img_id)[0]['file_name']
+        img_info: Dict = self._coco_dataset.loadImgs(img_id)[0]
+        path: str = img_info['file_name']
 
-        img = Image.open(os.path.join(self._img_path, path)).convert('RGB')
-        if self._transform is not None:
-            img = self._transform(img)
+        img_origin = Image.open(os.path.join(self._img_path, path)).convert('RGB')
+        original_img_size = img_origin.size
+        if self._data_transform is not None:
+            img = self._data_transform(img_origin)
 
         if self._target_transform is not None:
-            target = self._target_transform(target)
+            target = self._target_transform(target, original_img_size)
 
-        # category(1) + bbox(4)
-        bboxes = torch.zeros([120, 5])
-        for idx, instance in enumerate(target):
-            bbox = instance.get("bbox")
-            category_id: int = instance.get("category_id")
-            bboxes[idx, 0] = category_id
-            bboxes[idx, 1:] = torch.tensor(bbox)
-
-        return img, bboxes
+        return img, target
     
     
 # def coco_collate_fn(batch):
@@ -98,7 +96,7 @@ if __name__ == "__main__":
     ])
     coco_dataset = CocoDataset(
         args=args["training"]["data"], 
-        transform=transform
+        data_transform=transform
     )
     
     coco_dataloader = DataLoader(

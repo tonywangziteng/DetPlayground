@@ -50,10 +50,10 @@ def main(config_name: str):
         target = target.to(device=device)
         output = model(data)
         
-        losses = loss_calculator.calculate_losses(
-            outputs = output, 
-            targets = target
-        )
+        # losses = loss_calculator.calculate_losses(
+        #     outputs = output, 
+        #     targets = target
+        # )
 
 if __name__ == "__main__":
     main()
