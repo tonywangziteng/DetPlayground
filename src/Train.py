@@ -50,6 +50,7 @@ def main(config_name: str):
         target = target.to(device=device)
         output = model(data)
         
+        # loss, reg_weight * loss_iou, loss_obj, loss_cls, num_fore_ground / max(num_groud_truth, 1)
         losses = loss_calculator.calculate_losses(
             outputs = output, 
             targets = target

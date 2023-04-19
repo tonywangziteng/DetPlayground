@@ -42,10 +42,8 @@ class LossCalculator:
             expanded_strides.append(
                 torch.full([1, grid.shape[1]], stride).type_as(output)
             )
-
-            # TODO[Ziteng]: store original preds for l1 loss 
-
             processed_outputs.append(output)
+            
         # [bs, n_anchors_all, 85]
         processed_outputs: torch.Tensor = torch.cat(processed_outputs, dim=1)
 
@@ -140,32 +138,16 @@ class LossCalculator:
                 ) * pred_ious_this_matching.unsqueeze(-1)   # class prediction actually predicts the IoU
                 obj_target = fg_mask.unsqueeze(-1)
                 reg_target = gt_bboxes_per_img[matched_gt_inds]
-                # TODO[Ziteng]: L1 loss
-                # if self.use_l1:
-                #     l1_target = self.get_l1_target(
-                #         outputs.new_zeros((num_fg_img, 4)),
-                #         gt_bboxes_per_image[matched_gt_inds],
-                #         expanded_strides[0][fg_mask],
-                #         x_shifts=x_shifts[0][fg_mask],
-                #         y_shifts=y_shifts[0][fg_mask],
-                #     )
                 
             cls_targets.append(cls_target)
             reg_targets.append(reg_target)
             obj_targets.append(obj_target.type_as(cls_target))
             fg_masks.append(fg_mask)
-            
-            # TODO[Ziteng]: L1 loss
-            # if self.use_l1:
-            #     l1_targets.append(l1_target)
 
         cls_targets = torch.cat(cls_targets, 0)
         reg_targets = torch.cat(reg_targets, 0)
         obj_targets = torch.cat(obj_targets, 0)
         fg_masks = torch.cat(fg_masks, 0)
-        # TODO[Ziteng]: L1 loss
-        # if self.use_l1:
-        #     l1_targets = torch.cat(l1_targets, 0)
         
         num_fore_ground = max(num_fore_ground, 1)
         loss_iou = (
@@ -180,25 +162,15 @@ class LossCalculator:
             )
         ).sum() / num_fore_ground
         
-        # TODO[Ziteng]: L1 loss
-        # if self.use_l1:
-        #     loss_l1 = (
-        #         self.l1_loss(origin_preds.view(-1, 4)[fg_masks], l1_targets)
-        #     ).sum() / num_fg
-        # else:
-        #     loss_l1 = 0.0
-        loss_l1 = 0.0
-
         # TODO[Ziteng]: loss weights magic number
         reg_weight = 5.0
-        loss = reg_weight * loss_iou + loss_obj + loss_cls + loss_l1
+        loss = reg_weight * loss_iou + loss_obj + loss_cls
 
         return (
             loss,
             reg_weight * loss_iou,
             loss_obj,
             loss_cls,
-            loss_l1,
             num_fore_ground / max(num_groud_truth, 1),
         )
 
