@@ -33,7 +33,7 @@ def get_geometry_constraint(
     expanded_strides: torch.Tensor, # [1, n_anchors_all]
     x_shifts: torch.Tensor, # [1, n_anchors_all]
     y_shifts: torch.Tensor, # [1, n_anchors_all]
-):
+) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Calculate whether the center of an object is located in a fixed range of
     an anchor. This is used to avert inappropriate matching. It can also reduce

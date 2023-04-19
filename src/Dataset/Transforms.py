@@ -4,6 +4,8 @@ import numpy as np
 import torch
 from torchvision import transforms
 
+from Utils.Bboxes import xyxy2cxcywh
+
 
 class YoloXCocoDataTransform:
     def __init__(
@@ -32,13 +34,14 @@ class YoloXCocoTargetTransform:
     def __call__(
         self, 
         target: List, 
-        original_img_size: Tuple[int, int]
+        original_img_size: Tuple[int, int], 
+        format: str = "cxcywh"    # "xyxy"
     ) -> torch.Tensor:
         """
         Params:
             target: List of targets. bbox in [left_top_x, left_top_y, w, h]
         return:
-            bboxes: [[x1, y1, x2, y2, catogory]]
+            bboxes: torch.Tensor
         """
         # category(1) + bbox(4)
         bboxes = torch.zeros([120, 5])
@@ -62,6 +65,9 @@ class YoloXCocoTargetTransform:
         ).unsqueeze(0)
         
         bboxes[:, :4] *= scale
+        
+        if format == "cxcywh":
+            bboxes = xyxy2cxcywh(bboxes)
         
         return bboxes
         
