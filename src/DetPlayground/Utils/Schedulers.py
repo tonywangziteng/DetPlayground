@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Type
+from typing import Dict, Optional, List, Type, Any
 import warnings
 import math
 
@@ -10,13 +10,12 @@ from DetPlayground.Utils.Optimizers import BaseOptimizer
 import torch
 from torch.utils.data.dataloader import DataLoader
 from torch.optim.optimizer import Optimizer
-from torch.optim.lr_scheduler import LRScheduler
+from torch.optim.lr_scheduler import _LRScheduler
 
 
-class BaseScheduler(ABC, LRScheduler):
+class BaseScheduler(ABC, _LRScheduler):
     """
     The base class for every scheduler
-    There are a warmup and a saturation mechanism built in
     """
     def __init__(
         self, 
@@ -26,8 +25,16 @@ class BaseScheduler(ABC, LRScheduler):
         verbose: bool = False,
         **kargs
     ) -> None:
-        LRScheduler.__init__(self, optimizer, last_epoch=last_epoch, verbose=verbose)
+        _LRScheduler.__init__(self, optimizer, last_epoch=last_epoch, verbose=verbose)
         self._epoch_num = epoch_num
+        
+    @property
+    def epoch_num(self) -> int:
+        return self._epoch_num
+    
+    @property
+    def param_groups(self) -> List[Dict[str, Any]]:
+        return self.optimizer.param_groups
         
 
 class CosineSchedulerWarmup(BaseScheduler):
@@ -83,8 +90,63 @@ class CosineSchedulerWarmup(BaseScheduler):
         return [cur_lr for _ in self.optimizer.param_groups]
 
 
-SCHEDULER_COLLECTION: Dict[str, Type(LRScheduler)] = {
+SCHEDULER_COLLECTION: Dict[str, Type(_LRScheduler)] = {
     "cosine": CosineSchedulerWarmup
 }
 
+
+
 #TODO[Ziteng]: warmup wrapper
+class WarmupSaturationWrapper(_LRScheduler):
+    def __init__(
+        self, 
+        scheduler: BaseScheduler, 
+        lr_warmup_ratio: float = 1.0, 
+        warmup_epoch: int = 0, 
+        lr_saturation_ratio: float = 1.0, 
+        saturation_epoch: int = 0
+    ) -> None:
+        self._scheduler = scheduler
+        self._base_lr_list: List[float] = scheduler.base_lrs
+        
+        self._lr_warmup_start_list: List[float] = [lr_warmup_ratio * base_lr for base_lr in self._base_lr_list]
+        self._warmup_epoch = warmup_epoch
+        self._lr_saturation_list: List[float] = [lr_saturation_ratio * base_lr for base_lr in self._base_lr_list]
+        self._saturation_epoch = saturation_epoch
+        
+        self._epoch_num = self._scheduler.epoch_num
+
+    def get_lr(self) -> List[float]:
+        
+        if self.last_epoch < self._warmup_epoch:
+            # warmup learning rate
+            lr_list: List[float] = []
+            for base_lr, lr_warmup_start in zip(self._base_lr_list, self._lr_warmup_start_list):
+                lr_list.append(
+                    (base_lr - lr_warmup_start) * self.last_epoch/self._warmup_epoch \
+                        + self.lr_warmup_start
+                )
+        elif self._epoch_num <= self.last_epoch < self._epoch_num + self._saturation_epoch:
+            lr_list = self._lr_saturation_list
+        else:
+            lr_list = self._scheduler.get_lr()
+            
+        return lr_list
+    
+    def step(self, epoch: Optional[int] = None) -> None:
+        if epoch is None:
+            epoch: int = self.last_epoch + 1
+        self.last_epoch = epoch
+        
+        if self.last_epoch < self._warmup_epoch:
+            for param_group, lr in zip(self._scheduler.param_groups, self.get_lr()):
+                param_group["lr"] = lr
+        elif self._epoch_num <= self.last_epoch < self._epoch_num + self._saturation_epoch:
+            for param_group, lr in zip(self._scheduler.param_groups, self.get_lr()):
+                param_group["lr"] = lr
+        else:
+            self._scheduler.step(epoch=self.last_epoch - self._warmup_epoch)
+                
+
+
+
