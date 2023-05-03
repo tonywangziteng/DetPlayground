@@ -3,10 +3,10 @@ from typing import Any, Optional, Callable, List
 import torch 
 import torch.nn as nn
 
-from Models.CommonBlocks.BaseConvs import BaseConv
-from Models.CommonBlocks.BaseConvs import DWConv
-from Models.CommonBlocks.BaseConvs import Identity
-from Models.CommonBlocks.BaseActivations import SiLU
+from DetPlayground.Models.CommonBlocks.BaseConvs import BaseConv
+from DetPlayground.Models.CommonBlocks.BaseConvs import DWConv
+from DetPlayground.Models.CommonBlocks.BaseConvs import Identity
+from DetPlayground.Models.CommonBlocks.BaseActivations import SiLU
    
 
 class ResidualBlock(nn.Module):

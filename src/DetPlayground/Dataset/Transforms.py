@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torchvision import transforms
 
-from Utils.Bboxes import xyxy2cxcywh
+from DetPlayground.Utils.Bboxes import xyxy2cxcywh
 
 
 class YoloXCocoDataTransform:

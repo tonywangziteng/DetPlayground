@@ -10,9 +10,9 @@ import torch.nn as nn
 from torch.utils.data.dataloader import DataLoader
 
 import yaml
-from Models import model_collection
-from Dataset.CocoDataset import CocoDataset
-from Loss.LossCalculator import LossCalculator
+from DetPlayground.Models import MODEL_COLLECTION
+from DetPlayground.Dataset.CocoDataset import CocoDataset
+from DetPlayground.Loss.YoloXLossCalculator import YoloXLossCalculator
 
 @click.command()
 @click.option('--config_name',type = str,  default = "YoloxL.yaml", help='Number of greetings.')
@@ -27,20 +27,21 @@ def main(config_name: str):
     os.environ["CUDA_VISIBLE_DEVICE"] = str(args["training"]["GPUIdx"])
         
     # Model preparation
-    model = model_collection[args["model"]["type"]]
+    model = MODEL_COLLECTION[args["model"]["type"]]
     model = model(args["model"])
 
     # Dataloader
     dataset = CocoDataset(args=args["training"]["data"])
     dataloader = DataLoader(
         dataset=dataset, 
-        batch_size=args["training"]["batchSize"], 
+        batch_size=args["training"]["data"]["batchSize"], 
     )
     
-    loss_calculator = LossCalculator(
-        num_classes=args["model"]["num_classes"], 
-        strides=model.strides
-    )
+    # Loss
+    loss_calculator = YoloXLossCalculator(args["model"])
+    
+    # Optimizer and Scheduler
+    
     
     model.train()
     device = torch.device("cuda:0")
@@ -55,6 +56,8 @@ def main(config_name: str):
             outputs = output, 
             targets = target
         )
+        
+        model.parameters()
 
 if __name__ == "__main__":
     main()

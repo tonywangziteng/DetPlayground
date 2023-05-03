@@ -1,41 +1,46 @@
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 import logging
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from Loss.LossUtils import correct_output_and_get_grid
-from Loss.IOULoss import IOUloss
-from Loss.LossUtils import get_geometry_constraint
+from DetPlayground.Loss.LossUtils import correct_output_and_get_grid
+from DetPlayground.Loss.IOULoss import IOUloss
+from DetPlayground.Loss.LossUtils import get_geometry_constraint
 
-from Utils.Bboxes import bboxes_iou
+from DetPlayground.Utils.Bboxes import bboxes_iou
+from DetPlayground.Loss.BaseLossCalculator import BaseLossCalculator
 
 
-class LossCalculator:
+class YoloXLossCalculator(BaseLossCalculator):
     def __init__(
         self, 
         num_classes: int, 
-        strides: List[int]
+        *args: List, 
+        **kargs: Dict
     ) -> None:
         self.l1_loss = nn.L1Loss(reduction="none")
         self.bcewithlog_loss = nn.BCEWithLogitsLoss(reduction="none")
         self.iou_loss = IOUloss(reduction="none")
         self.num_classes = num_classes
-        self.strides = strides
 
         self._logger = logging.getLogger("LossCalculator")
         print("Calculator logger level: ", self._logger.level)
 
     def calculate_losses(
         self, 
-        outputs: List[torch.Tensor], 
+        outputs: Dict, # [n, [bs, c, h, w]]
         targets: torch.Tensor,  # [bs, 120, 5]
     ):
+        raw_output: List[torch.Tensor] = outputs["raw_output"]
+        strides: List[int] = outputs["strides"]
+        
+        # prepare tensors needed for loss calculation
         x_shifts, y_shifts, expanded_strides = [], [], []
         processed_outputs: List[torch.Tensor] = []
-        for i, (output, stride) in enumerate(zip(outputs, self.strides)):
-            # output: [bs, n_anchors, 85]
+        for i, (output, stride) in enumerate(zip(raw_output, strides)):
+            # output: [bs, c, h, w] -> [bs, n_anchors(h*w), 85]
             output, grid = correct_output_and_get_grid(output, stride, output.device)
             x_shifts.append(grid[:, :, 0])
             y_shifts.append(grid[:, :, 1])
@@ -65,7 +70,7 @@ class LossCalculator:
         obj_targets = []
         fg_masks = []
 
-        num_fore_ground: int = 0
+        num_foreground: int = 0
         num_groud_truth: int = 0
 
         for batch_idx in range(processed_outputs.shape[0]):
@@ -131,7 +136,7 @@ class LossCalculator:
                         "cpu",
                     )
                 torch.cuda.empty_cache()
-                num_fore_ground += num_fg_img
+                num_foreground += num_fg_img
 
                 cls_target = F.one_hot(
                     gt_matched_classes.to(torch.int64), self.num_classes
@@ -149,29 +154,37 @@ class LossCalculator:
         obj_targets = torch.cat(obj_targets, 0)
         fg_masks = torch.cat(fg_masks, 0)
         
-        num_fore_ground = max(num_fore_ground, 1)
+        num_foreground = max(num_foreground, 1)
         loss_iou = (
             self.iou_loss(bbox_preds.view(-1, 4)[fg_masks], reg_targets)
-        ).sum() / num_fore_ground
+        ).sum() / num_foreground
         loss_obj = (
             self.bcewithlog_loss(obj_preds.view(-1, 1), obj_targets)
-        ).sum() / num_fore_ground
+        ).sum() / num_foreground
         loss_cls = (
             self.bcewithlog_loss(
                 cls_preds.view(-1, self.num_classes)[fg_masks], cls_targets
             )
-        ).sum() / num_fore_ground
+        ).sum() / num_foreground
         
         # TODO[Ziteng]: loss weights magic number
         reg_weight = 5.0
         loss = reg_weight * loss_iou + loss_obj + loss_cls
 
+        ret = {
+            "loss": loss,
+            "iou_loss": reg_weight * loss_iou,
+            "obj_loss": loss_obj,
+            "cls_loss": loss_cls,
+            "foreground_ratio": num_foreground / max(num_groud_truth, 1), 
+            
+        }
         return (
             loss,
             reg_weight * loss_iou,
             loss_obj,
             loss_cls,
-            num_fore_ground / max(num_groud_truth, 1),
+            num_foreground / max(num_groud_truth, 1),
         )
 
     @torch.no_grad()

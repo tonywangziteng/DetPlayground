@@ -12,8 +12,8 @@ from torchvision import transforms
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.dataloader import DataLoader
 
-from Dataset.Transforms import YoloXCocoDataTransform
-from Dataset.Transforms import YoloXCocoTargetTransform
+from DetPlayground.Dataset.Transforms import YoloXCocoDataTransform
+from DetPlayground.Dataset.Transforms import YoloXCocoTargetTransform
 
 
 class CocoDataset(Dataset):
@@ -21,7 +21,7 @@ class CocoDataset(Dataset):
         self, 
         args: Dict[str, Any], 
         data_transform: Optional[Callable] = None, 
-        target_transform: Optional[Callable] = None
+        target_transform: Optional[Callable] = None, 
     ) -> None:
         """Coco structure dataset
 
@@ -70,6 +70,15 @@ class CocoDataset(Dataset):
             target = self._target_transform(target, original_img_size)
 
         return img, target
+    
+
+def get_coco_dataloader(args: Dict) -> DataLoader:
+    dataset = CocoDataset(args=args["data"])
+    dataloader = DataLoader(
+        dataset=dataset, 
+        batch_size=args["batchSize"], 
+    )
+    return dataloader
     
     
 # def coco_collate_fn(batch):

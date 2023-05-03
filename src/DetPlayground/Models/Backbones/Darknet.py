@@ -4,13 +4,13 @@ from abc import abstractmethod
 import torch
 import torch.nn as nn
 
-from Models.CommonBlocks.BaseConvs import BaseConv
-from Models.CommonBlocks.BaseConvs import DWConv
-from Models.CommonBlocks.BaseBlocks import ResidualBlockYoloX as ResLayer
-from Models.CommonBlocks.BaseBlocks import CSPLayer
-from Models.CommonBlocks.BaseBlocks import Focus
-from Models.CommonBlocks.BaseBlocks import SPPBottleneck
-from Models.CommonBlocks.BaseActivations import SiLU
+from DetPlayground.Models.CommonBlocks.BaseConvs import BaseConv
+from DetPlayground.Models.CommonBlocks.BaseConvs import DWConv
+from DetPlayground.Models.CommonBlocks.BaseBlocks import ResidualBlockYoloX as ResLayer
+from DetPlayground.Models.CommonBlocks.BaseBlocks import CSPLayer
+from DetPlayground.Models.CommonBlocks.BaseBlocks import Focus
+from DetPlayground.Models.CommonBlocks.BaseBlocks import SPPBottleneck
+from DetPlayground.Models.CommonBlocks.BaseActivations import SiLU
     
 
 class Darknet(nn.Module, ABC):

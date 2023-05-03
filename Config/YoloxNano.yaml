@@ -3,6 +3,9 @@ model:
   num_classes: 80
 
 training:
+  GPUIdx: 1
+  epoch_num: 100
+
   data:
     rootPath: ../Data/COCO
     imgPath: train2017
@@ -10,6 +13,30 @@ training:
     imgSize:
       - 416
       - 416
+    batchSize: 32
 
-  GPUIdx: 1
-  batchSize: 32
+  optimizer: 
+    type: sgd  # sgd, adam, repopt
+    lr_start: 5.0e-4
+    weight_decay: 1.0e-3
+  
+  # cosine scheduler settings
+  scheduler:
+    type: cosine
+    lr_warmup_ratio: 0.1
+    lr_warmup_epoch: 0
+    lr_saturate_ratio: 0.1
+    lr_saturate_epoch: 0
+
+  augmentation:
+    epoch_num_wo_aug: 10
+
+validation:
+  data:
+    rootPath: ../Data/COCO
+    imgPath: val2017
+    annoPath: annotations/instances_val2017.json
+    imgSize:
+      - 416
+      - 416
+    batchSize: 32

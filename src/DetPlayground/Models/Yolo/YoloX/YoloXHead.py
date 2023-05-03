@@ -6,9 +6,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from Models.CommonBlocks.BaseConvs import BaseConv
-from Models.CommonBlocks.BaseConvs import DWConv
-from Models.CommonBlocks.BaseActivations import SiLU
+from DetPlayground.Models.CommonBlocks.BaseConvs import BaseConv
+from DetPlayground.Models.CommonBlocks.BaseConvs import DWConv
+from DetPlayground.Models.CommonBlocks.BaseActivations import SiLU
 
 
 class YoloXHead(nn.Module):
@@ -16,10 +16,10 @@ class YoloXHead(nn.Module):
         self,
         num_classes: int,
         width: float = 1.0,
-        strides: List[int] = [8, 16, 32],
         in_channels: List[int] = [256, 512, 1024],
         act: nn.Module = SiLU,
         depthwise=False,
+        **kargs
     ):
         """
         Args:
@@ -30,9 +30,6 @@ class YoloXHead(nn.Module):
 
         self.num_classes = num_classes
         self.decode_in_inference = True  # for deploy, set to False
-        
-        self._strides = strides
-        self._in_channels = in_channels
 
         self.cls_convs = nn.ModuleList()
         self.reg_convs = nn.ModuleList()
@@ -171,4 +168,4 @@ class YoloXHead(nn.Module):
     
     @property
     def strides(self) -> List[int]:
-        return self._strides
+        return [8, 16, 32]

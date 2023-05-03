@@ -3,11 +3,11 @@ from typing import Tuple, List
 import torch
 import torch.nn as nn
 
-from Models.CommonBlocks.BaseConvs import DWConv
-from Models.CommonBlocks.BaseConvs import BaseConv
-from Models.Backbones.Darknet import CSPDarknet
-from Models.CommonBlocks.BaseBlocks import CSPLayer
-from Models.CommonBlocks.BaseActivations import SiLU
+from DetPlayground.Models.CommonBlocks.BaseConvs import DWConv
+from DetPlayground.Models.CommonBlocks.BaseConvs import BaseConv
+from DetPlayground.Models.Backbones.Darknet import CSPDarknet
+from DetPlayground.Models.CommonBlocks.BaseBlocks import CSPLayer
+from DetPlayground.Models.CommonBlocks.BaseActivations import SiLU
 
 
 class YoloXPan(nn.Module):
